@@ -84,7 +84,7 @@ async function render() {
   });
   rows.sort((a, b) => Math.abs(b.apr) - Math.abs(a.apr));
   $("rows").innerHTML = rows.slice(0, 40).map((r) => `
-    <tr class="row" data-i="${r.i}" data-coin="${r.coin}">
+    <tr class="row" data-i="${r.i}" data-coin="${r.coin}" data-mark="${r.mark}">
       <td>${r.coin}</td><td>${r.mark}</td><td>${pct(r.fr * 24, 3)}</td>
       <td class="${r.fr >= 0 ? "pos" : "neg"}">${pct(r.fr, 4)}</td>
       <td class="${r.apr >= 0 ? "pos" : "neg"}">${pct(r.apr, 1)}</td>
@@ -98,6 +98,7 @@ async function render() {
     $("tCoin").textContent = tr.dataset.coin;
     $("ticket").dataset.i = tr.dataset.i;
     $("ticket").dataset.coin = tr.dataset.coin;
+    $("ticket").dataset.mark = tr.dataset.mark;
   }));
 }
 
@@ -129,11 +130,15 @@ async function trade(isBuy) {
   const coin = $("ticket").dataset.coin;
   const a = Number($("ticket").dataset.i);
   const sz = $("size").value.trim();
+  const mark = Number($("ticket").dataset.mark);
   if (!sz) return log("enter a size first");
+  // HL has no native market order: send an IOC limit 1% through mark as the slippage bound.
+  const dec = mark >= 1000 ? 1 : mark >= 1 ? 3 : 5;
+  const px = (mark * (isBuy ? 1.01 : 0.99)).toFixed(dec);
   try {
     log("placing…");
     const r = await exchange.order({
-      orders: [{ a, b: isBuy, p: "0", s: sz, r: false, t: { market: {} } }],
+      orders: [{ a, b: isBuy, p: px, s: sz, r: false, t: { limit: { tif: "Ioc" } } }],
       grouping: "na",
       builder: { b: BUILDER, f: FEE_TENTHS_BP },
     });
