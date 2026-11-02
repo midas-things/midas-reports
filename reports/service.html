@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Midas — Competitor stockout alerts for coffee equipment retailers</title>
+<meta name="description" content="Daily list of products your competitors are sold out of. Built from a nightly crawl of 35 coffee equipment stores.">
+<style>
+  :root{--bg:#0b0f0d;--panel:#101713;--line:#1e2b23;--fg:#d8ffe9;--dim:#7fae96;--acc:#6dffb0;--amber:#ffb340}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.65 ui-monospace,"SF Mono",Menlo,monospace}
+  .wrap{max-width:840px;margin:0 auto;padding:48px 22px 80px}
+  h1{font-size:32px;line-height:1.25;margin:0 0 10px;letter-spacing:-.5px}
+  h2{font-size:18px;margin:38px 0 10px;color:var(--acc);letter-spacing:.04em}
+  p{margin:0 0 14px;color:#c8e6d6}
+  .kicker{color:var(--dim);font-size:12px;letter-spacing:.18em;text-transform:uppercase;margin-bottom:18px}
+  .lede{font-size:18px;color:var(--fg)}
+  .rule{height:1px;background:var(--line);margin:30px 0}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin:14px 0}
+  th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line)}
+  th{color:var(--dim);font-weight:400;font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+  .out{color:#ff8f8f}
+  .in{color:var(--acc)}
+  .price{display:flex;gap:14px;flex-wrap:wrap;margin:18px 0}
+  .card{flex:1 1 240px;border:1px solid var(--line);background:var(--panel);padding:18px}
+  .card .amt{font-size:28px;color:var(--acc)}
+  .card .per{color:var(--dim);font-size:13px}
+  ul{padding-left:18px;color:#c8e6d6}
+  li{margin:6px 0}
+  a{color:var(--acc);text-decoration:none;border-bottom:1px dashed #2a7a52}
+  a:hover{color:#fff;border-color:var(--acc)}
+  .cta{display:inline-block;margin-top:10px;padding:12px 20px;border:1px solid var(--acc);color:var(--acc)}
+  .cta:hover{background:var(--acc);color:#04150c}
+  footer{margin-top:48px;color:var(--dim);font-size:12px;border-top:1px solid var(--line);padding-top:16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="kicker">Midas Labs · stockout intelligence</div>
+  <h1>Your competitor is sold out of a machine you have in stock. Do you know which one, today?</h1>
+  <p class="lede">Every night we crawl 35 coffee equipment retailers' catalogs — prices, variants, availability.
+  Each morning you get one page: the products a competitor is out of stock on while you can ship them.</p>
+
+  <h2>What a morning looks like</h2>
+  <table>
+    <tr><th>Product</th><th>Your stock</th><th>Competitor</th><th>Their price</th></tr>
+    <tr><td>La Marzocco Linea Mini R (Black)</td><td class="in">in stock · CAD 8,300</td><td class="out">sold out</td><td>CAD 8,300</td></tr>
+    <tr><td>ECM Mechanika Slim PID</td><td class="in">in stock · CAD 3,099</td><td class="out">sold out</td><td>CAD 3,099</td></tr>
+    <tr><td>Profitec JUMP</td><td class="in">in stock · CAD 2,899</td><td class="out">sold out</td><td>CAD 2,799</td></tr>
+  </table>
+  <p style="font-size:13px;color:var(--dim)">Example rows are from a real scan; a <a href="chriscoffee-stockout.html">full sample report</a> shows the format.</p>
+
+  <h2>Why this exists</h2>
+  <p>Out-of-stock rates across the stores we track run 18–75% of catalog variants. Every one of those is demand
+  that moves to whoever has it. Shoppers search by model number, land on the dealer that is out, and buy elsewhere —
+  usually without anyone noticing.</p>
+
+  <h2>Pricing</h2>
+  <div class="price">
+    <div class="card"><div class="amt">$149<span class="per">/month</span></div><div class="per">daily email + weekly CSV, one market</div></div>
+    <div class="card"><div class="amt">$1,290<span class="per">/year</span></div><div class="per">two months free, priority on new competitors</div></div>
+  </div>
+  <p style="font-size:13px;color:var(--dim)">First two weeks free, cancel any time. No setup fee, no integration — we crawl the public catalogs.</p>
+
+  <h2>What you get</h2>
+  <ul>
+    <li>Morning email: SKUs your competitors are out of, with their price and your price</li>
+    <li>Weekly CSV with the full price/stock delta history for your catalog</li>
+    <li>You pick the competitors we watch (any store with a public product feed)</li>
+  </ul>
+
+  <h2>Ask for a sample</h2>
+  <p>Reply to the email that brought you here, or write to
+  <a href="mailto:themidaslabs@gmail.com?subject=Stockout%20report%20sample">themidaslabs@gmail.com</a> with the store you run.
+  We send one free report on your own catalog within a day.</p>
+  <a class="cta" href="mailto:themidaslabs@gmail.com?subject=Stockout%20report%20sample">Get the free sample</a>
+
+  <footer>Midas Labs · automated catalog monitoring · data collected from public storefronts</footer>
+</div>
+</body>
+</html>
