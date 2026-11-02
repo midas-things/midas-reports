@@ -75,8 +75,20 @@ const load = async () => {
 
 const pct = (v, d = 2) => (v * 100).toFixed(d) + "%";
 
+const CACHE = "midas_hl_ctxs_v1";
+
+// API is ~72KB and took 3.7s cold; paint the last snapshot first, then refresh.
 async function render() {
+  try {
+    const cached = JSON.parse(localStorage.getItem(CACHE) || "null");
+    if (cached) paint(cached[0], cached[1]);
+  } catch {}
   const [meta, ctxs] = await postInfo({ type: "metaAndAssetCtxs" });
+  try { localStorage.setItem(CACHE, JSON.stringify([meta, ctxs])); } catch {}
+  paint(meta, ctxs);
+}
+
+function paint(meta, ctxs) {
   universe = meta.universe;
   const rows = [];
   meta.universe.forEach((u, i) => {
