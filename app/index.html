@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Midas — Hyperliquid funding extremes</title>
+<style>
+  :root{--bg:#0b0f0d;--fg:#d8f5e3;--dim:#5d7d6c;--line:#1b2b23;--hi:#7cf5b6;--warn:#f5c07c}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace}
+  header{display:flex;gap:16px;align-items:baseline;padding:14px 18px;border-bottom:1px solid var(--line)}
+  h1{font-size:14px;margin:0;letter-spacing:.08em;text-transform:uppercase;color:var(--hi)}
+  .sub{color:var(--dim)}
+  main{padding:18px;max-width:1100px}
+  table{width:100%;border-collapse:collapse}
+  th,td{text-align:left;padding:6px 10px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+  th{color:var(--dim);font-weight:400;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+  tr.row:hover{background:#101a16;cursor:pointer}
+  tr.row.sel{background:#13251d}
+  .pos{color:var(--hi)}.neg{color:var(--warn)}
+  .ticket{margin-top:18px;padding:14px;border:1px solid var(--line);display:none}
+  .ticket.on{display:block}
+  button{font:inherit;background:#16281f;color:var(--fg);border:1px solid #24402f;padding:7px 14px;cursor:pointer}
+  button:hover{background:#1d3a2c;border-color:var(--hi)}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  .status{color:var(--dim);margin-top:10px;white-space:pre-wrap}
+  input{font:inherit;background:#0f1a15;color:var(--fg);border:1px solid #24402f;padding:6px 8px;width:120px}
+  a{color:var(--hi)}
+</style>
+</head>
+<body>
+<header>
+  <h1>Midas · funding extremes</h1>
+  <span class="sub">live from Hyperliquid info API · click a row to trade it here</span>
+</header>
+<main>
+  <div id="meta" class="sub" style="padding-bottom:8px">loading…</div>
+  <table>
+    <thead><tr><th>coin</th><th>mark</th><th>24h</th><th>funding/hr</th><th>APR</th><th>open interest</th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+
+  <div id="ticket" class="ticket">
+    <div style="margin-bottom:10px">Trade <b id="tCoin">—</b> through Midas (0.01% on your fills, cheaper than the 0.045% you already pay)</div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <button id="connect">Connect wallet</button>
+      <button id="approve" disabled>Approve builder fee</button>
+      <input id="size" placeholder="size" value="">
+      <button id="long" disabled>Long</button>
+      <button id="short" disabled>Short</button>
+    </div>
+    <div id="status" class="status"></div>
+  </div>
+</main>
+
+<script type="module">
+const BUILDER = "0x0000000000000000000000000000000000000000"; // ponytail: set to our builder address before launch
+const FEE_TENTHS_BP = 10;   // 0.01%
+const MAX_FEE_RATE = "0.1%"; // approval ceiling, user can revoke anytime
+const API = "https://api.hyperliquid.xyz/info";
+
+const $ = (id) => document.getElementById(id);
+const log = (m) => { $("status").textContent = m; };
+
+let sdk = null, info = null, exchange = null, account = null, universe = [];
+const load = async () => {
+  sdk = await import("https://esm.sh/@nktkas/hyperliquid@0.33.3");
+  const transport = new sdk.HttpTransport();
+  info = new sdk.InfoClient({ transport });
+  return transport;
+};
+
+const pct = (v, d = 2) => (v * 100).toFixed(d) + "%";
+
+async function render() {
+  const [meta, ctxs] = await info.metaAndAssetCtxs();
+  universe = meta.universe;
+  const rows = [];
+  meta.universe.forEach((u, i) => {
+    const c = ctxs[i];
+    if (!c) return;
+    const fr = Number(c.funding);
+    rows.push({ i, coin: u.name, mark: Number(c.markPx), fr, apr: fr * 24 * 365, oi: Number(c.openInterest) * Number(c.markPx) });
+  });
+  rows.sort((a, b) => Math.abs(b.apr) - Math.abs(a.apr));
+  $("rows").innerHTML = rows.slice(0, 40).map((r) => `
+    <tr class="row" data-i="${r.i}" data-coin="${r.coin}">
+      <td>${r.coin}</td><td>${r.mark}</td><td>${pct(r.fr * 24, 3)}</td>
+      <td class="${r.fr >= 0 ? "pos" : "neg"}">${pct(r.fr, 4)}</td>
+      <td class="${r.apr >= 0 ? "pos" : "neg"}">${pct(r.apr, 1)}</td>
+      <td>$${Math.round(r.oi).toLocaleString()}</td>
+    </tr>`).join("");
+  $("meta").textContent = `${rows.length} perps · sorted by |APR| · funding paid/received hourly`;
+  document.querySelectorAll("tr.row").forEach((tr) => tr.addEventListener("click", () => {
+    document.querySelectorAll("tr.row").forEach((x) => x.classList.remove("sel"));
+    tr.classList.add("sel");
+    $("ticket").classList.add("on");
+    $("tCoin").textContent = tr.dataset.coin;
+    $("ticket").dataset.i = tr.dataset.i;
+    $("ticket").dataset.coin = tr.dataset.coin;
+  }));
+}
+
+let transport = null;
+$("connect").addEventListener("click", async () => {
+  try {
+    log("connecting…");
+    transport = await load();
+    const viem = await import("https://esm.sh/viem@2");
+    const wallet = viem.createWalletClient({ transport: viem.custom(window.ethereum) });
+    [account] = await wallet.requestAddresses();
+    exchange = new sdk.ExchangeClient({ transport, wallet });
+    $("connect").textContent = account.slice(0, 6) + "…" + account.slice(-4);
+    $("approve").disabled = false;
+    log("wallet connected");
+  } catch (e) { log("connect failed: " + (e?.message ?? e)); }
+});
+
+$("approve").addEventListener("click", async () => {
+  try {
+    log("sign the approval in your wallet…");
+    await exchange.approveBuilderFee({ builder: BUILDER, maxFeeRate: MAX_FEE_RATE });
+    ["long", "short"].forEach((id) => ($(id).disabled = false));
+    log("approved. you can revoke anytime in Hyperliquid settings.");
+  } catch (e) { log("approve failed: " + (e?.message ?? e)); }
+});
+
+async function trade(isBuy) {
+  const coin = $("ticket").dataset.coin;
+  const a = Number($("ticket").dataset.i);
+  const sz = $("size").value.trim();
+  if (!sz) return log("enter a size first");
+  try {
+    log("placing…");
+    const r = await exchange.order({
+      orders: [{ a, b: isBuy, p: "0", s: sz, r: false, t: { market: {} } }],
+      grouping: "na",
+      builder: { b: BUILDER, f: FEE_TENTHS_BP },
+    });
+    log(JSON.stringify(r));
+  } catch (e) { log("order failed: " + (e?.message ?? e)); }
+}
+$("long").addEventListener("click", () => trade(true));
+$("short").addEventListener("click", () => trade(false));
+
+load().then(render).catch((e) => { $("meta").textContent = "load failed: " + (e?.message ?? e); });
+</script>
+</body>
+</html>
