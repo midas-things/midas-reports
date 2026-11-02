@@ -59,6 +59,9 @@ const FEE_TENTHS_BP = 10;   // 0.01%
 const MAX_FEE_RATE = "0.1%"; // approval ceiling, user can revoke anytime
 const API = "https://api.hyperliquid.xyz/info";
 
+// data layer needs no SDK — importing esm.sh first cost ~6s of blank screen
+const postInfo = async (body) => (await fetch(API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })).json();
+
 const $ = (id) => document.getElementById(id);
 const log = (m) => { $("status").textContent = m; };
 
@@ -73,7 +76,7 @@ const load = async () => {
 const pct = (v, d = 2) => (v * 100).toFixed(d) + "%";
 
 async function render() {
-  const [meta, ctxs] = await info.metaAndAssetCtxs();
+  const [meta, ctxs] = await postInfo({ type: "metaAndAssetCtxs" });
   universe = meta.universe;
   const rows = [];
   meta.universe.forEach((u, i) => {
@@ -148,7 +151,7 @@ async function trade(isBuy) {
 $("long").addEventListener("click", () => trade(true));
 $("short").addEventListener("click", () => trade(false));
 
-load().then(render).catch((e) => { $("meta").textContent = "load failed: " + (e?.message ?? e); });
+render().catch((e) => { $("meta").textContent = "load failed: " + (e?.message ?? e); });
 </script>
 </body>
 </html>
